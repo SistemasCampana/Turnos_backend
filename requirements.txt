@@ -15,3 +15,5 @@ mysql-connector-python
 python-dotenv
 gunicorn
 psycopg2-binary
+Jinja2==3.0.3
+MarkupSafe==2.0.1
