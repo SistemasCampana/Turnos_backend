@@ -1,0 +1,17 @@
+Flask==1.1.2 
+Flask-SQLAlchemy==2.5.1
+Flask-Migrate==4.0.7
+Flask-MySQLdb==2.0.0 
+marshmallow==3.23.0
+marshmallow-sqlalchemy==1.1.0 
+mysql==0.0.3 
+PyMySQL==1.1.1 
+flask_restful
+flask_jwt_extended
+cloudinary
+flask_cors
+flasgger
+mysql-connector-python
+python-dotenv
+gunicorn
+psycopg2-binary
