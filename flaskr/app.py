@@ -11,7 +11,6 @@ CORS(app)
 
 
 db.init_app(app)
-JWTManager(app)
 Migrate(app, db)
 
 

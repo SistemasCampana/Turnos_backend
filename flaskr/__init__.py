@@ -17,8 +17,8 @@ def create_app(config_name):
     )
     
     # 🔑 Llaves secretas
-    app.config['SECRET_KEY'] = 'Jaider1206'
-    app.config['JWT_SECRET_KEY'] = 'Jaider1206'
+    #app.config['SECRET_KEY'] = 'Jaider1206'
+    #app.config['JWT_SECRET_KEY'] = 'Jaider1206'
     
     # 🔄 Usar la base de datos de Render (PostgreSQL)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
