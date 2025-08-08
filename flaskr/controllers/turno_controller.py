@@ -10,15 +10,12 @@ def crear_turno():
     
     cursor.execute("SELECT numero FROM turnos ORDER BY id DESC LIMIT 1")
     last = cursor.fetchone()
-    print("Último turno:", last) #temporal
     
     if last:
         numero_actual = int(last['numero'][1:])
         nuevo_numero = "A" + str(numero_actual + 1).zfill(3)
     else:
         nuevo_numero = "A001"
-        
-    print("Nuevo número:", nuevo_numero) # temporal
 
 
     cursor.execute("INSERT INTO turnos (numero, estado) VALUES (%s, %s)", (nuevo_numero, 'esperando'))
