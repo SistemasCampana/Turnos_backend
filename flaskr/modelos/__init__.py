@@ -1,1 +1,1 @@
-from .modelos import *
+from .modelos import Turno, TurnoSchema, UsuarioSchema, Usuario
