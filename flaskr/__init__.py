@@ -44,7 +44,8 @@ def create_app(config_name='default'):
 
     # Inicializar extensiones
     db.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(app, db, directory="migrations")
+
 
     # Registrar modelos
     from flaskr import modelos
