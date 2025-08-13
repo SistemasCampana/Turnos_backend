@@ -46,7 +46,6 @@ def create_app(config_name='default'):
     db.init_app(app)
     migrate.init_app(app, db, directory="migrations")
 
-
     # Registrar modelos
     from flaskr import modelos
 
@@ -59,5 +58,18 @@ def create_app(config_name='default'):
         with app.app_context():
             from flask_migrate import upgrade
             upgrade()
+            
+            # Crear usuario inicial automáticamente si no hay usuarios
+            from flaskr.modelos import Usuario
+            from werkzeug.security import generate_password_hash
+
+            if Usuario.query.count() == 0:
+                username = "Administrador"
+                password = "Campana17"
+                hashed_password = generate_password_hash(password)
+                nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
+                db.session.add(nuevo_usuario)
+                db.session.commit()
+                print(f"✅ Usuario '{username}' creado automáticamente.")
 
     return app
