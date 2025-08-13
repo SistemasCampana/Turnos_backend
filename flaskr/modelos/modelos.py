@@ -40,7 +40,7 @@ class Usuario(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.Text, nullable=False)
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
