@@ -60,3 +60,14 @@ def llamar_siguiente():
         return jsonify(turno_schema.dump(turno))
 
     return jsonify({'mensaje': 'No hay turnos disponibles'}), 404
+
+@turno_bp.route('/reiniciar', methods=['POST'])
+def reiniciar_turnos():
+    # Aquí podrías validar que es un admin (si tienes login con roles)
+    try:
+        Turno.query.delete()
+        db.session.commit()
+        return jsonify({"mensaje": "Turnos reiniciados correctamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
