@@ -51,7 +51,9 @@ def create_app(config_name='default'):
 
     # Registrar blueprints
     from flaskr.controllers.turno_controller import turno_bp
-    app.register_blueprint(turno_bp, url_prefix="/api")
+    from flaskr.controllers.login_controller import login_bp
+    app.register_blueprint(turno_bp, url_prefix="/api/turnos")
+    app.register_blueprint(login_bp, url_prefix="/api")
 
     # 🚀 Migraciones automáticas en producción (Render)
     if os.environ.get('FLASK_ENV') == 'production':
