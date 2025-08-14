@@ -1,15 +1,25 @@
 # flaskr/controllers/turno_controller.py
 from flaskr import db
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 from flaskr.modelos import Turno, TurnoSchema
 
 turno_bp = Blueprint('turnos', __name__)
 turno_schema = TurnoSchema()
 turnos_schema = TurnoSchema(many=True)
 
-@turno_bp.route('/', methods=['POST'])
+# Función helper para respuesta OPTIONS
+def opciones_cors():
+    response = make_response('', 204)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
+@turno_bp.route('/', methods=['POST', 'OPTIONS'])
 def crear_turno():
-    # Obtener el último turno creado
+    if request.method == 'OPTIONS':
+        return opciones_cors()
+
     ultimo_turno = Turno.query.order_by(Turno.id.desc()).first()
 
     if ultimo_turno:
@@ -18,20 +28,25 @@ def crear_turno():
     else:
         nuevo_numero = "A001"
 
-    # Crear nuevo turno
     nuevo_turno = Turno(numero=nuevo_numero, estado='esperando')
     db.session.add(nuevo_turno)
     db.session.commit()
 
     return jsonify({'numero': nuevo_numero}), 201
 
-@turno_bp.route('/ultimo', methods=['GET'])
+@turno_bp.route('/ultimo', methods=['GET', 'OPTIONS'])
 def obtener_ultimo():
+    if request.method == 'OPTIONS':
+        return opciones_cors()
+
     turno = Turno.query.filter_by(estado='llamado').order_by(Turno.id.desc()).first()
     return turno_schema.jsonify(turno) if turno else jsonify({})
 
-@turno_bp.route('/siguiente', methods=['POST'])
+@turno_bp.route('/siguiente', methods=['POST', 'OPTIONS'])
 def llamar_siguiente():
+    if request.method == 'OPTIONS':
+        return opciones_cors()
+
     modulo = request.json.get('modulo', 1)
 
     turno = Turno.query.filter_by(estado='esperando').order_by(Turno.id.asc()).first()
