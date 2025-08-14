@@ -1,18 +1,18 @@
 # flaskr/controllers/turno_controller.py
 from flaskr import db
-from flask import Blueprint, jsonify, request, make_response
+from flask import Blueprint, jsonify, request
 from flaskr.modelos import Turno, TurnoSchema
 
 turno_bp = Blueprint('turnos', __name__)
 turno_schema = TurnoSchema()
 turnos_schema = TurnoSchema(many=True)
 
-# Función helper para respuesta OPTIONS
+# Función auxiliar para manejar OPTIONS (CORS)
 def opciones_cors():
-    response = make_response('', 204)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response = jsonify({})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
     return response
 
 @turno_bp.route('/', methods=['POST', 'OPTIONS'])
@@ -40,7 +40,10 @@ def obtener_ultimo():
         return opciones_cors()
 
     turno = Turno.query.filter_by(estado='llamado').order_by(Turno.id.desc()).first()
-    return turno_schema.jsonify(turno) if turno else jsonify({})
+    if turno:
+        return jsonify(turno_schema.dump(turno))
+    else:
+        return jsonify({})
 
 @turno_bp.route('/siguiente', methods=['POST', 'OPTIONS'])
 def llamar_siguiente():
@@ -48,13 +51,12 @@ def llamar_siguiente():
         return opciones_cors()
 
     modulo = request.json.get('modulo', 1)
-
     turno = Turno.query.filter_by(estado='esperando').order_by(Turno.id.asc()).first()
 
     if turno:
         turno.estado = 'llamado'
         turno.modulo = modulo
         db.session.commit()
-        return turno_schema.jsonify(turno)
+        return jsonify(turno_schema.dump(turno))
 
     return jsonify({'mensaje': 'No hay turnos disponibles'}), 404
