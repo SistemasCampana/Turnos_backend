@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
 from flaskr.modelos import Usuario
-from flaskr.modelos import db
+from flaskr import db
 import datetime
 
 login_bp = Blueprint('login', __name__)
