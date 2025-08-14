@@ -4,6 +4,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import cloudinary
 import os
+from flask_cors import CORS  # 🆕 Import CORS
 
 # Instancias globales
 db = SQLAlchemy()
@@ -23,14 +24,12 @@ def create_app(config_name='default'):
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-change-me')
 
-    # 🔄 Base de datos: usar DATABASE_URL si existe (Render/PostgreSQL), sino usar MySQL local
+    # 🔄 Base de datos
     database_url = os.environ.get("DATABASE_URL")
-
     if database_url:
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql://", 1)
     else:
-        # Construir conexión MySQL local
         db_user = os.environ.get("DB_USER", "root")
         db_password = os.environ.get("DB_PASSWORD", "")
         db_host = os.environ.get("DB_HOST", "localhost")
@@ -41,6 +40,9 @@ def create_app(config_name='default'):
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['FLASK_RUN_PORT'] = int(os.environ.get("PORT", 5001))
+
+    # 🆕 Activar CORS para todas las rutas /api/*
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 
     # Inicializar extensiones
     db.init_app(app)
@@ -60,7 +62,7 @@ def create_app(config_name='default'):
         with app.app_context():
             from flask_migrate import upgrade
             upgrade()
-            
+
             # Crear usuario inicial automáticamente si no hay usuarios
             from flaskr.modelos import Usuario
             from werkzeug.security import generate_password_hash
