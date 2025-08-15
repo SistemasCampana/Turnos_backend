@@ -5,17 +5,11 @@ from datetime import datetime
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 import enum
 
-# ========================
-# Enum para los estados del turno
-# ========================
 class EstadoTurno(enum.Enum):
     esperando = "esperando"
     llamado = "llamado"
     atendido = "atendido"
 
-# ========================
-# Modelo de Turnos
-# ========================
 class Turno(db.Model):
     __tablename__ = 'turnos'
 
@@ -32,9 +26,7 @@ class Turno(db.Model):
     def __repr__(self):
         return f'<Turno {self.numero} - Módulo {self.modulo} - Estado {self.estado.value}>'
 
-# ========================
-# Modelo de Usuarios
-# ========================
+
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
 
@@ -54,16 +46,13 @@ class Usuario(db.Model):
     def __repr__(self):
         return f'<Usuario {self.username}>'
 
-# ========================
-# SERIALIZADORES
-# ========================
+
 class TurnoSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = Turno
         include_relationships = True
         load_instance = True
 
-    # Para que en JSON salga como string
     estado = fields.Method("get_estado", deserialize="load_estado")
 
     def get_estado(self, obj):

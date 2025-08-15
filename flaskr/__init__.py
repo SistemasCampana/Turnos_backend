@@ -4,27 +4,27 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import cloudinary
 import os
-from flask_cors import CORS  # 🆕 Import CORS
+from flask_cors import CORS  
 
-# Instancias globales
+
 db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app(config_name='default'):
     app = Flask(__name__)
 
-    # 📦 Configuración de Cloudinary
+
     cloudinary.config(
         cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dz6c95uv6'),
         api_key=os.environ.get('CLOUDINARY_API_KEY', '827636139563183'),
         api_secret=os.environ.get('CLOUDINARY_API_SECRET', 'pR_UNAWeUsijnZnS_7weISDue0Y')
     )
 
-    # 🔑 Llaves secretas (JWT y Flask)
+
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-change-me')
 
-    # 🔄 Base de datos
+
     database_url = os.environ.get("DATABASE_URL")
     if database_url:
         if database_url.startswith("postgres://"):
@@ -41,29 +41,28 @@ def create_app(config_name='default'):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['FLASK_RUN_PORT'] = int(os.environ.get("PORT", 5001))
 
-    # 🆕 Activar CORS para todas las rutas /api/*
+
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 
-    # Inicializar extensiones
+
     db.init_app(app)
     migrate.init_app(app, db, directory="migrations")
 
-    # Registrar modelos
+
     from flaskr import modelos
 
-    # Registrar blueprints
+
     from flaskr.controllers.turno_controller import turno_bp
     from flaskr.controllers.login_controller import login_bp
     app.register_blueprint(turno_bp, url_prefix="/api/turnos")
     app.register_blueprint(login_bp, url_prefix="/api")
 
-    # 🚀 Migraciones automáticas en producción (Render)
+
     if os.environ.get('FLASK_ENV') == 'production':
         with app.app_context():
             from flask_migrate import upgrade
             upgrade()
 
-            # Crear usuario inicial automáticamente si no hay usuarios
             from flaskr.modelos import Usuario
             from werkzeug.security import generate_password_hash
 

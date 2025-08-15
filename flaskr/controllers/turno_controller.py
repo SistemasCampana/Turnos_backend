@@ -7,7 +7,6 @@ turno_bp = Blueprint('turnos', __name__)
 turno_schema = TurnoSchema()
 turnos_schema = TurnoSchema(many=True)
 
-# Función auxiliar para manejar OPTIONS (CORS)
 def opciones_cors():
     response = jsonify({})
     response.headers.add("Access-Control-Allow-Origin", "*")
@@ -63,7 +62,7 @@ def llamar_siguiente():
 
 @turno_bp.route('/reiniciar', methods=['POST'])
 def reiniciar_turnos():
-    # Aquí podrías validar que es un admin (si tienes login con roles)
+
     try:
         Turno.query.delete()
         db.session.commit()
