@@ -1,8 +1,8 @@
-"""Agregar nombre_cliente y bodega opcionales
+"""Base inicial
 
-Revision ID: cab18955dd8c
+Revision ID: 04f6bf27b2d2
 Revises: 
-Create Date: 2025-08-26 16:46:08.016541
+Create Date: 2025-08-26 16:56:04.394769
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cab18955dd8c'
+revision = '04f6bf27b2d2'
 down_revision = None
 branch_labels = None
 depends_on = None
