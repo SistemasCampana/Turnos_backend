@@ -1,7 +1,7 @@
 # flaskr/controllers/turno_controller.py
 from flaskr import db
 from flask import Blueprint, jsonify, request
-from flaskr.modelos import Turno, TurnoSchema, EstadoTurno
+from flaskr.modelos.modelos import Turno, TurnoSchema, EstadoTurno
 
 turno_bp = Blueprint('turnos', __name__)
 turno_schema = TurnoSchema()
