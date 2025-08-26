@@ -1,8 +1,8 @@
-"""empty message
+"""Agregar nombre_cliente y bodega opcionales
 
-Revision ID: b72118a77d19
+Revision ID: cab18955dd8c
 Revises: 
-Create Date: 2025-08-13 09:37:26.344880
+Create Date: 2025-08-26 16:46:08.016541
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b72118a77d19'
+revision = 'cab18955dd8c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,6 +21,8 @@ def upgrade():
     op.create_table('turnos',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('numero', sa.String(length=10), nullable=False),
+    sa.Column('nombre_cliente', sa.String(length=100), nullable=True),
+    sa.Column('bodega', sa.String(length=100), nullable=True),
     sa.Column('modulo', sa.Integer(), nullable=True),
     sa.Column('estado', sa.Enum('esperando', 'llamado', 'atendido', name='estado_turno', native_enum=False), nullable=False),
     sa.Column('creado_en', sa.DateTime(), nullable=True),
