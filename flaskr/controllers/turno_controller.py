@@ -1,7 +1,7 @@
 # flaskr/controllers/turno_controller.py
 from flaskr import db
 from flask import Blueprint, jsonify, request
-from flaskr.modelos import Turno, TurnoSchema
+from flaskr.modelos import Turno, TurnoSchema, EstadoTurno
 
 turno_bp = Blueprint('turnos', __name__)
 turno_schema = TurnoSchema()
@@ -19,6 +19,14 @@ def crear_turno():
     if request.method == 'OPTIONS':
         return opciones_cors()
 
+    data = request.get_json()
+    nombre_cliente = data.get("nombre_cliente")
+    bodega = data.get("bodega")
+
+    if not nombre_cliente or not bodega:
+        return jsonify({"error": "El nombre del cliente y la bodega son obligatorios"}), 400
+
+    # Obtener último turno para calcular el número
     ultimo_turno = Turno.query.order_by(Turno.id.desc()).first()
 
     if ultimo_turno:
@@ -27,18 +35,24 @@ def crear_turno():
     else:
         nuevo_numero = "A001"
 
-    nuevo_turno = Turno(numero=nuevo_numero, estado='esperando')
+    # Crear turno con cliente y bodega
+    nuevo_turno = Turno(
+        numero=nuevo_numero,
+        nombre_cliente=nombre_cliente,
+        bodega=bodega,
+        estado=EstadoTurno.esperando
+    )
     db.session.add(nuevo_turno)
     db.session.commit()
 
-    return jsonify({'numero': nuevo_numero}), 201
+    return turno_schema.jsonify(nuevo_turno), 201
 
 @turno_bp.route('/ultimo', methods=['GET', 'OPTIONS'])
 def obtener_ultimo():
     if request.method == 'OPTIONS':
         return opciones_cors()
 
-    turno = Turno.query.filter_by(estado='llamado').order_by(Turno.id.desc()).first()
+    turno = Turno.query.filter_by(estado=EstadoTurno.llamado).order_by(Turno.id.desc()).first()
     if turno:
         return jsonify(turno_schema.dump(turno))
     else:
@@ -50,10 +64,10 @@ def llamar_siguiente():
         return opciones_cors()
 
     modulo = request.json.get('modulo', 1)
-    turno = Turno.query.filter_by(estado='esperando').order_by(Turno.id.asc()).first()
+    turno = Turno.query.filter_by(estado=EstadoTurno.esperando).order_by(Turno.id.asc()).first()
 
     if turno:
-        turno.estado = 'llamado'
+        turno.estado = EstadoTurno.llamado
         turno.modulo = modulo
         db.session.commit()
         return jsonify(turno_schema.dump(turno))
@@ -62,7 +76,6 @@ def llamar_siguiente():
 
 @turno_bp.route('/reiniciar', methods=['POST'])
 def reiniciar_turnos():
-
     try:
         Turno.query.delete()
         db.session.commit()

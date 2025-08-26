@@ -15,6 +15,8 @@ class Turno(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     numero = db.Column(db.String(10), nullable=False)
+    nombre_cliente = db.Column(db.String(100), nullable=False)   # 👈 nuevo campo
+    bodega = db.Column(db.String(100), nullable=False)           # 👈 nuevo campo
     modulo = db.Column(db.Integer, nullable=True)
     estado = db.Column(
         db.Enum(EstadoTurno, name="estado_turno", native_enum=False),
@@ -24,8 +26,7 @@ class Turno(db.Model):
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f'<Turno {self.numero} - Módulo {self.modulo} - Estado {self.estado.value}>'
-
+        return f'<Turno {self.numero} - Cliente {self.nombre_cliente} - Bodega {self.bodega} - Módulo {self.modulo} - Estado {self.estado.value}>'
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
@@ -46,7 +47,6 @@ class Usuario(db.Model):
     def __repr__(self):
         return f'<Usuario {self.username}>'
 
-
 class TurnoSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = Turno
@@ -65,4 +65,3 @@ class UsuarioSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = Usuario
         load_instance = True
-
