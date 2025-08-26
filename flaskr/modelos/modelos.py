@@ -15,8 +15,8 @@ class Turno(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     numero = db.Column(db.String(10), nullable=False)
-    nombre_cliente = db.Column(db.String(100), nullable=False)   # 👈 nuevo campo
-    bodega = db.Column(db.String(100), nullable=False)           # 👈 nuevo campo
+    nombre_cliente = db.Column(db.String(100), nullable=True)   # 👈 nuevo campo
+    bodega = db.Column(db.String(100), nullable=True)           # 👈 nuevo campo
     modulo = db.Column(db.Integer, nullable=True)
     estado = db.Column(
         db.Enum(EstadoTurno, name="estado_turno", native_enum=False),
