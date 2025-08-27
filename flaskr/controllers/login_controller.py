@@ -2,7 +2,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
 from flaskr.modelos import Usuario
-from flaskr import db
 import datetime
 
 login_bp = Blueprint('login', __name__)
@@ -19,7 +18,8 @@ def login():
 
     usuario = Usuario.query.filter_by(username=username).first()
 
-    if not usuario or not usuario.check_password(password):
+    # 👇 Blindaje: evita error 500 si no hay password_hash válido
+    if not usuario or not usuario.password_hash or not usuario.check_password(password):
         return jsonify({"msg": "Credenciales inválidas"}), 401
 
     # Crear token con duración de 1 hora
