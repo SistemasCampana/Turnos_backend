@@ -60,8 +60,14 @@ def create_app(config_name='default'):
 
     if os.environ.get('FLASK_ENV') == 'production':
         with app.app_context():
-            from flask_migrate import upgrade
-            upgrade()
+            from flask_migrate import upgrade, stamp
+            try:
+                # 🔹 Sincronizar base de datos con HEAD actual
+                stamp()
+                upgrade()
+                print("✅ Migraciones aplicadas automáticamente en Render.")
+            except Exception as e:
+                print("⚠️ Error aplicando migraciones en Render:", e)
 
             from flaskr.modelos import Usuario
             from werkzeug.security import generate_password_hash
