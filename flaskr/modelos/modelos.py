@@ -53,13 +53,11 @@ class TurnoSchema(SQLAlchemyAutoSchema):
         include_relationships = True
         load_instance = True
 
-    estado = fields.Method("get_estado", deserialize="load_estado")
+    estado = fields.Method("get_estado")
 
     def get_estado(self, obj):
         return obj.estado.value if obj.estado else None
 
-    def load_estado(self, value):
-        return EstadoTurno(value)
 
 class UsuarioSchema(SQLAlchemyAutoSchema):
     class Meta:
