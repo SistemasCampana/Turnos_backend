@@ -56,34 +56,39 @@ def create_app(config_name='default'):
             from sqlalchemy import inspect
             insp = inspect(db.engine)
 
-            if not insp.get_table_names():
-                # Si no hay tablas → crear todas desde los modelos
-                db.create_all()
-                print("✅ Tablas creadas automáticamente en Render (sin migraciones).")
-            else:
-                # Si ya hay tablas → aplicar migraciones normalmente
-                try:
+            try:
+                if not insp.get_table_names():
+                    # Si no hay tablas → crear todas desde los modelos
+                    db.create_all()
+                    print("✅ Tablas creadas automáticamente en Render (sin migraciones).")
+                else:
+                    # Si ya hay tablas → aplicar migraciones normalmente
                     from flask_migrate import upgrade, stamp
                     stamp()
                     upgrade()
                     print("✅ Migraciones aplicadas automáticamente en Render.")
-                except Exception as e:
-                    print("⚠️ Error aplicando migraciones en Render:", e)
+            except Exception as e:
+                print("⚠️ Error creando o migrando tablas en Render:", e)
 
             # 🔹 Crear usuario administrador inicial
-            if "usuarios" in insp.get_table_names():
-                from flaskr.modelos import Usuario
-                from werkzeug.security import generate_password_hash
+            try:
+                if "usuarios" in insp.get_table_names():
+                    from flaskr.modelos import Usuario
+                    from werkzeug.security import generate_password_hash
 
-                if Usuario.query.count() == 0:
-                    username = "Administrador"
-                    password = "Campana17"
-                    hashed_password = generate_password_hash(password)
-                    nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
-                    db.session.add(nuevo_usuario)
-                    db.session.commit()
-                    print(f"✅ Usuario '{username}' creado automáticamente.")
-            else:
-                print("⚠️ La tabla 'usuarios' aún no existe, no se creó el admin.")
+                    if Usuario.query.count() == 0:
+                        username = "Administrador"
+                        password = "Campana17"
+                        hashed_password = generate_password_hash(password)
+                        nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
+                        db.session.add(nuevo_usuario)
+                        db.session.commit()
+                        print(f"✅ Usuario '{username}' creado automáticamente.")
+                    else:
+                        print("ℹ️ Ya existen usuarios en la tabla, no se creó el admin.")
+                else:
+                    print("⚠️ La tabla 'usuarios' aún no existe, no se pudo crear el admin.")
+            except Exception as e:
+                print("⚠️ Error al crear usuario administrador inicial:", e)
 
     return app
