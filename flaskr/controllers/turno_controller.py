@@ -19,34 +19,40 @@ def crear_turno():
     if request.method == 'OPTIONS':
         return opciones_cors()
 
-    data = request.get_json()
-    nombre_cliente = data.get("nombre_cliente")
-    bodega = data.get("bodega")
+    try:
+        data = request.get_json()
+        nombre_cliente = data.get("nombre_cliente")
+        bodega = data.get("bodega")
 
-    if not nombre_cliente or not bodega:
-        return jsonify({"error": "El nombre del cliente y la bodega son obligatorios"}), 400
+        if not nombre_cliente or not bodega:
+            return jsonify({"error": "El nombre del cliente y la bodega son obligatorios"}), 400
 
-    # Obtener último turno para calcular el número
-    ultimo_turno = Turno.query.order_by(Turno.id.desc()).first()
+        # Obtener último turno para calcular el número
+        ultimo_turno = Turno.query.order_by(Turno.id.desc()).first()
 
-    if ultimo_turno:
-        numero_actual = int(ultimo_turno.numero[1:])
-        nuevo_numero = "A" + str(numero_actual + 1).zfill(3)
-    else:
-        nuevo_numero = "A001"
+        if ultimo_turno:
+            numero_actual = int(ultimo_turno.numero[1:])
+            nuevo_numero = "A" + str(numero_actual + 1).zfill(3)
+        else:
+            nuevo_numero = "A001"
 
-    # 🔹 Crear turno con cliente y bodega, pero ya en estado "llamado"
-    nuevo_turno = Turno(
-        numero=nuevo_numero,
-        nombre_cliente=nombre_cliente,
-        bodega=bodega,
-        estado=EstadoTurno.llamado,  # 👈 CAMBIO CLAVE
-        modulo=1  # opcional: puedes asignar el módulo por defecto
-    )
-    db.session.add(nuevo_turno)
-    db.session.commit()
+        # 🔹 Crear turno con cliente y bodega, ya en estado "llamado"
+        nuevo_turno = Turno(
+            numero=nuevo_numero,
+            nombre_cliente=nombre_cliente,
+            bodega=bodega,
+            estado=EstadoTurno.llamado,  
+            modulo=1  
+        )
+        db.session.add(nuevo_turno)
+        db.session.commit()
 
-    return turno_schema.jsonify(nuevo_turno), 201
+        return turno_schema.jsonify(nuevo_turno), 201
+
+    except Exception as e:
+        db.session.rollback()  # 👈 Por si la BD falló
+        return jsonify({"error": str(e)}), 500
+
 
 @turno_bp.route('/ultimo', methods=['GET', 'OPTIONS'])
 def obtener_ultimo():
