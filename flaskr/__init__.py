@@ -45,50 +45,52 @@ def create_app(config_name='default'):
 
     # 🔹 Importar modelos y controladores
     from flaskr import modelos
+    from flaskr.modelos import Usuario, Turno
     from flaskr.controllers.turno_controller import turno_bp
     from flaskr.controllers.login_controller import login_bp
     app.register_blueprint(turno_bp, url_prefix="/api/turnos")
     app.register_blueprint(login_bp, url_prefix="/api")
 
-    # 🔹 Solo en producción: manejar migraciones o crear tablas
+    # 🔹 Solo en producción: manejar creación de tablas una por una
     if os.environ.get('FLASK_ENV') == 'production':
         with app.app_context():
             from sqlalchemy import inspect
             insp = inspect(db.engine)
+            tablas = insp.get_table_names()
 
-            try:
-                if not insp.get_table_names():
-                    # Si no hay tablas → crear todas desde los modelos
-                    db.create_all()
-                    print("✅ Tablas creadas automáticamente en Render (sin migraciones).")
-                else:
-                    # Si ya hay tablas → aplicar migraciones normalmente
-                    from flask_migrate import upgrade, stamp
-                    stamp()
-                    upgrade()
-                    print("✅ Migraciones aplicadas automáticamente en Render.")
-            except Exception as e:
-                print("⚠️ Error creando o migrando tablas en Render:", e)
+            # Crear tabla usuarios si no existe
+            if "usuarios" not in tablas:
+                try:
+                    Usuario.__table__.create(db.engine)
+                    print("✅ Tabla 'usuarios' creada correctamente.")
+                except Exception as e:
+                    print("⚠️ Error creando la tabla 'usuarios':", e)
+            else:
+                print("ℹ️ La tabla 'usuarios' ya existe.")
+
+            # Crear tabla turnos si no existe
+            if "turnos" not in tablas:
+                try:
+                    Turno.__table__.create(db.engine)
+                    print("✅ Tabla 'turnos' creada correctamente.")
+                except Exception as e:
+                    print("⚠️ Error creando la tabla 'turnos':", e)
+            else:
+                print("ℹ️ La tabla 'turnos' ya existe.")
 
             # 🔹 Crear usuario administrador inicial
-            try:
-                if "usuarios" in insp.get_table_names():
-                    from flaskr.modelos import Usuario
-                    from werkzeug.security import generate_password_hash
+            if "usuarios" in insp.get_table_names():
+                from werkzeug.security import generate_password_hash
 
-                    if Usuario.query.count() == 0:
-                        username = "Administrador"
-                        password = "Campana17"
-                        hashed_password = generate_password_hash(password)
-                        nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
-                        db.session.add(nuevo_usuario)
-                        db.session.commit()
-                        print(f"✅ Usuario '{username}' creado automáticamente.")
-                    else:
-                        print("ℹ️ Ya existen usuarios en la tabla, no se creó el admin.")
-                else:
-                    print("⚠️ La tabla 'usuarios' aún no existe, no se pudo crear el admin.")
-            except Exception as e:
-                print("⚠️ Error al crear usuario administrador inicial:", e)
+                if Usuario.query.count() == 0:
+                    username = "Administrador"
+                    password = "Campana17"
+                    hashed_password = generate_password_hash(password)
+                    nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
+                    db.session.add(nuevo_usuario)
+                    db.session.commit()
+                    print(f"✅ Usuario '{username}' creado automáticamente.")
+            else:
+                print("⚠️ La tabla 'usuarios' aún no existe, no se creó el admin.")
 
     return app
