@@ -35,12 +35,13 @@ def crear_turno():
     else:
         nuevo_numero = "A001"
 
-    # Crear turno con cliente y bodega
+    # 🔹 Crear turno con cliente y bodega, pero ya en estado "llamado"
     nuevo_turno = Turno(
         numero=nuevo_numero,
         nombre_cliente=nombre_cliente,
         bodega=bodega,
-        estado=EstadoTurno.esperando
+        estado=EstadoTurno.llamado,  # 👈 CAMBIO CLAVE
+        modulo=1  # opcional: puedes asignar el módulo por defecto
     )
     db.session.add(nuevo_turno)
     db.session.commit()
