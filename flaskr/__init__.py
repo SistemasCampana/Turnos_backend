@@ -1,5 +1,5 @@
 # flaskr/__init__.py
-from flask_migrate import Migrate, upgrade
+from flask_migrate import Migrate
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import cloudinary
@@ -21,6 +21,7 @@ def create_app(config_name='default'):
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-change-me')
 
+    # 🔹 Configurar conexión a DB
     database_url = os.environ.get("DATABASE_URL")
     if database_url:
         if database_url.startswith("postgres://"):
@@ -42,27 +43,34 @@ def create_app(config_name='default'):
     db.init_app(app)
     migrate.init_app(app, db, directory="migrations")
 
+    # 🔹 Importar modelos y controladores
     from flaskr import modelos
-
     from flaskr.controllers.turno_controller import turno_bp
     from flaskr.controllers.login_controller import login_bp
     app.register_blueprint(turno_bp, url_prefix="/api/turnos")
     app.register_blueprint(login_bp, url_prefix="/api")
 
-    # 🔹 Solo en producción: aplicar migraciones y crear usuario admin inicial
+    # 🔹 Solo en producción: manejar migraciones o crear tablas
     if os.environ.get('FLASK_ENV') == 'production':
         with app.app_context():
-            from flask_migrate import upgrade, stamp
             from sqlalchemy import inspect
-            try:
-                stamp()
-                upgrade()
-                print("✅ Migraciones aplicadas automáticamente en Render.")
-            except Exception as e:
-                print("⚠️ Error aplicando migraciones en Render:", e)
-
-            # ✅ Crear usuario solo si la tabla existe
             insp = inspect(db.engine)
+
+            if not insp.get_table_names():
+                # Si no hay tablas → crear todas desde los modelos
+                db.create_all()
+                print("✅ Tablas creadas automáticamente en Render (sin migraciones).")
+            else:
+                # Si ya hay tablas → aplicar migraciones normalmente
+                try:
+                    from flask_migrate import upgrade, stamp
+                    stamp()
+                    upgrade()
+                    print("✅ Migraciones aplicadas automáticamente en Render.")
+                except Exception as e:
+                    print("⚠️ Error aplicando migraciones en Render:", e)
+
+            # 🔹 Crear usuario administrador inicial
             if "usuarios" in insp.get_table_names():
                 from flaskr.modelos import Usuario
                 from werkzeug.security import generate_password_hash
