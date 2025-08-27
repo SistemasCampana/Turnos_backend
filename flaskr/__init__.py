@@ -6,13 +6,11 @@ import cloudinary
 import os
 from flask_cors import CORS  
 
-
 db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app(config_name='default'):
     app = Flask(__name__)
-
 
     cloudinary.config(
         cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dz6c95uv6'),
@@ -20,10 +18,8 @@ def create_app(config_name='default'):
         api_secret=os.environ.get('CLOUDINARY_API_SECRET', 'pR_UNAWeUsijnZnS_7weISDue0Y')
     )
 
-
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-change-me')
-
 
     database_url = os.environ.get("DATABASE_URL")
     if database_url:
@@ -41,44 +37,45 @@ def create_app(config_name='default'):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['FLASK_RUN_PORT'] = int(os.environ.get("PORT", 5001))
 
-
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
-
 
     db.init_app(app)
     migrate.init_app(app, db, directory="migrations")
 
-
     from flaskr import modelos
-
 
     from flaskr.controllers.turno_controller import turno_bp
     from flaskr.controllers.login_controller import login_bp
     app.register_blueprint(turno_bp, url_prefix="/api/turnos")
     app.register_blueprint(login_bp, url_prefix="/api")
 
-
+    # 🔹 Solo en producción: aplicar migraciones y crear usuario admin inicial
     if os.environ.get('FLASK_ENV') == 'production':
         with app.app_context():
             from flask_migrate import upgrade, stamp
+            from sqlalchemy import inspect
             try:
-                # 🔹 Sincronizar base de datos con HEAD actual
                 stamp()
                 upgrade()
                 print("✅ Migraciones aplicadas automáticamente en Render.")
             except Exception as e:
                 print("⚠️ Error aplicando migraciones en Render:", e)
 
-            from flaskr.modelos import Usuario
-            from werkzeug.security import generate_password_hash
+            # ✅ Crear usuario solo si la tabla existe
+            insp = inspect(db.engine)
+            if "usuarios" in insp.get_table_names():
+                from flaskr.modelos import Usuario
+                from werkzeug.security import generate_password_hash
 
-            if Usuario.query.count() == 0:
-                username = "Administrador"
-                password = "Campana17"
-                hashed_password = generate_password_hash(password)
-                nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
-                db.session.add(nuevo_usuario)
-                db.session.commit()
-                print(f"✅ Usuario '{username}' creado automáticamente.")
+                if Usuario.query.count() == 0:
+                    username = "Administrador"
+                    password = "Campana17"
+                    hashed_password = generate_password_hash(password)
+                    nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
+                    db.session.add(nuevo_usuario)
+                    db.session.commit()
+                    print(f"✅ Usuario '{username}' creado automáticamente.")
+            else:
+                print("⚠️ La tabla 'usuarios' aún no existe, no se creó el admin.")
 
     return app
