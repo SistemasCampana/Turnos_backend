@@ -78,8 +78,12 @@ def create_app(config_name='default'):
             else:
                 print("ℹ️ La tabla 'turnos' ya existe.")
 
-            # 🔹 Crear usuario administrador inicial
-            if "usuarios" in insp.get_table_names():
+            # 🔄 Refrescar el inspector después de crear las tablas
+            insp = inspect(db.engine)
+            tablas_actualizadas = insp.get_table_names()
+
+            # 🔹 Crear usuario administrador inicial SOLO si ya existe la tabla usuarios
+            if "usuarios" in tablas_actualizadas:
                 from werkzeug.security import generate_password_hash
 
                 if Usuario.query.count() == 0:
