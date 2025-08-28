@@ -47,7 +47,7 @@ def crear_turno():
         db.session.add(nuevo_turno)
         db.session.commit()
 
-        return turno_schema.jsonify(nuevo_turno), 201
+        return jsonify(turno_schema.dump(nuevo_turno)), 201
 
     except Exception as e:
         db.session.rollback()  # Por si la BD falló
