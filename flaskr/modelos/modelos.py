@@ -18,11 +18,8 @@ class Turno(db.Model):
     nombre_cliente = db.Column(db.String(100), nullable=True)   # 👈 nuevo campo
     bodega = db.Column(db.String(100), nullable=True)           # 👈 nuevo campo
     modulo = db.Column(db.Integer, nullable=True)
-    estado = db.Column(
-        db.Enum(EstadoTurno, name="estado_turno", native_enum=False),
-        default=EstadoTurno.esperando,
-        nullable=False
-    )
+    estado = db.Column(db.String(9), default=EstadoTurno.esperando.value, nullable=False)
+
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):

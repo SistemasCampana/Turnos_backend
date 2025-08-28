@@ -41,7 +41,7 @@ def crear_turno():
             numero=nuevo_numero,
             nombre_cliente=nombre_cliente,
             bodega=bodega,
-            estado=EstadoTurno.llamado,  
+            estado=EstadoTurno.llamado.value,  
             modulo=1  
         )
         db.session.add(nuevo_turno)
@@ -50,7 +50,7 @@ def crear_turno():
         return turno_schema.jsonify(nuevo_turno), 201
 
     except Exception as e:
-        db.session.rollback()  # 👈 Por si la BD falló
+        db.session.rollback()  # Por si la BD falló
         return jsonify({"error": str(e)}), 500
 
 
