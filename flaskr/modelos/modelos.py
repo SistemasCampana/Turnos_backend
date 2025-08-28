@@ -23,7 +23,8 @@ class Turno(db.Model):
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f'<Turno {self.numero} - Cliente {self.nombre_cliente} - Bodega {self.bodega} - Módulo {self.modulo} - Estado {self.estado.value}>'
+        return f'<Turno {self.numero} - Cliente {self.nombre_cliente} - Bodega {self.bodega} - Módulo {self.modulo} - Estado {self.estado}>'
+
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
@@ -50,10 +51,7 @@ class TurnoSchema(SQLAlchemyAutoSchema):
         include_relationships = True
         load_instance = True
 
-    estado = fields.Method("get_estado")
-
-    def get_estado(self, obj):
-        return obj.estado.value if obj.estado else None
+    estado = fields.String()
 
 
 class UsuarioSchema(SQLAlchemyAutoSchema):

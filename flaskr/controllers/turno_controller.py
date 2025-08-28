@@ -59,7 +59,7 @@ def obtener_ultimo():
     if request.method == 'OPTIONS':
         return opciones_cors()
 
-    turno = Turno.query.filter_by(estado=EstadoTurno.llamado).order_by(Turno.id.desc()).first()
+    turno = Turno.query.filter_by(estado=EstadoTurno.llamado.value).order_by(Turno.id.desc()).first()
     if turno:
         return jsonify(turno_schema.dump(turno))
     else:
@@ -71,10 +71,10 @@ def llamar_siguiente():
         return opciones_cors()
 
     modulo = request.json.get('modulo', 1)
-    turno = Turno.query.filter_by(estado=EstadoTurno.esperando).order_by(Turno.id.asc()).first()
+    turno = Turno.query.filter_by(estado=EstadoTurno.esperando.value).order_by(Turno.id.asc()).first()
 
     if turno:
-        turno.estado = EstadoTurno.llamado
+        turno.estado = EstadoTurno.llamado.value
         turno.modulo = modulo
         db.session.commit()
         return jsonify(turno_schema.dump(turno))
