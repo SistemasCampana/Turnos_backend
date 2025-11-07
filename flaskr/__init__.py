@@ -97,4 +97,9 @@ def create_app(config_name='default'):
             else:
                 print("⚠️ La tabla 'usuarios' aún no existe, no se creó el admin.")
 
+    # 🔹 Endpoint para el monitor de UptimeRobot (acepta HEAD y GET)
+    @app.route("/api/turnos/ultimo", methods=["HEAD", "GET"])
+    def uptime_check():
+        return ("", 200)
+
     return app
