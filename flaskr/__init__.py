@@ -29,12 +29,17 @@ def create_app(config_name='default'):
     is_postgres = False
     
     if database_url:
+        # 1. Corrección del esquema postgres:// a postgresql:// (necesario para SQLAlchemy)
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql://", 1)
         
         # Detectar PostgreSQL para aplicar la corrección SSL
         if database_url.startswith("postgresql://"):
-             is_postgres = True
+             # Añadir sslmode=require directamente a la URL
+             if '?' not in database_url:
+                 database_url += '?sslmode=require'
+             elif 'sslmode' not in database_url:
+                 database_url += '&sslmode=require'
              
     else:
         db_user = os.environ.get("DB_USER", "root")
