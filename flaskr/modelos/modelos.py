@@ -15,13 +15,24 @@ class Turno(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     numero = db.Column(db.String(10), nullable=False)
-    nombre_cliente = db.Column(db.String(100), nullable=True)   # 👈 nuevo campo
-    bodega = db.Column(db.String(100), nullable=True)           # 👈 nuevo campo
+    nombre_cliente = db.Column(db.String(100), nullable=True)
+    bodega = db.Column(db.String(100), nullable=True)
     modulo = db.Column(db.Integer, nullable=True)
     estado = db.Column(db.String(9), default=EstadoTurno.esperando.value, nullable=False)
 
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # 📊 NUEVO MÉTODO ESTÁTICO PARA OBTENER EL INFORME
+    @staticmethod
+    def obtener_turnos_por_fecha(fecha_a_buscar):
+        """
+        Busca todos los turnos creados en la fecha específica (datetime.date).
+        Usamos db.func.date() para comparar solo la parte de la fecha del campo creado_en.
+        """
+        return Turno.query.filter(
+            db.func.date(Turno.creado_en) == fecha_a_buscar
+        ).order_by(Turno.id.asc()).all()
+        
     def __repr__(self):
         return f'<Turno {self.numero} - Cliente {self.nombre_cliente} - Bodega {self.bodega} - Módulo {self.modulo} - Estado {self.estado}>'
 

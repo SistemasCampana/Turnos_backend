@@ -1,6 +1,8 @@
 # flaskr/controllers/turno_controller.py
 from flaskr import db
 from flask import Blueprint, jsonify, request
+# 🚨 Agregamos datetime para el manejo de la fecha en el informe
+from datetime import datetime 
 from flaskr.modelos.modelos import Turno, TurnoSchema, EstadoTurno
 
 turno_bp = Blueprint('turnos', __name__)
@@ -90,3 +92,38 @@ def reiniciar_turnos():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+# 📊 NUEVA FUNCIÓN PARA GENERAR EL INFORME POR FECHA
+@turno_bp.route('/informe/<string:fecha_str>', methods=['GET', 'OPTIONS'])
+def generar_informe(fecha_str):
+    if request.method == 'OPTIONS':
+        return opciones_cors()
+    
+    try:
+        # Convertir la string de fecha (ej: '2025-12-05') a un objeto datetime.date
+        fecha_a_buscar = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+
+        # Llama al método estático que debe estar definido en modelos.py (Clase Turno)
+        turnos_del_dia = Turno.obtener_turnos_por_fecha(fecha_a_buscar)
+
+        # 1. Obtener la lista detallada de turnos
+        turnos_detalle = turnos_schema.dump(turnos_del_dia)
+        
+        # 2. Calcular el total de turnos
+        total_turnos = len(turnos_del_dia)
+
+        # 3. Formato del informe de respuesta
+        informe = {
+            "fecha": fecha_str,
+            "total_turnos": total_turnos,
+            "detalle_turnos": turnos_detalle
+        }
+
+        return jsonify(informe), 200
+
+    except ValueError:
+        # Esto ocurre si la fecha_str no tiene el formato correcto '%Y-%m-%d'
+        return jsonify({"error": "Formato de fecha inválido. Use YYYY-MM-DD"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Error al generar el informe: {str(e)}"}), 500
