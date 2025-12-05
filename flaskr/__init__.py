@@ -2,6 +2,7 @@
 from flask_migrate import Migrate
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect
 import cloudinary
 import os
 from flask_cors import CORS
@@ -35,11 +36,7 @@ def create_app(config_name='default'):
         
         # Detectar PostgreSQL para aplicar la corrección SSL
         if database_url.startswith("postgresql://"):
-             # Añadir sslmode=require directamente a la URL
-             if '?' not in database_url:
-                 database_url += '?sslmode=require'
-             elif 'sslmode' not in database_url:
-                 database_url += '&sslmode=require'
+             is_postgres = True
              
     else:
         db_user = os.environ.get("DB_USER", "root")
@@ -78,50 +75,53 @@ def create_app(config_name='default'):
     # 🔹 Solo en producción: manejar creación de tablas una por una
     if os.environ.get('FLASK_ENV') == 'production':
         with app.app_context():
-            from sqlalchemy import inspect
-            insp = inspect(db.engine)
-            tablas = insp.get_table_names()
+            try:
+                insp = inspect(db.engine)
+                tablas = insp.get_table_names()
 
-            # Crear tabla usuarios si no existe
-            if "usuarios" not in tablas:
-                try:
-                    Usuario.__table__.create(db.engine)
-                    print("✅ Tabla 'usuarios' creada correctamente.")
-                except Exception as e:
-                    print("⚠️ Error creando la tabla 'usuarios':", e)
-            else:
-                print("ℹ️ La tabla 'usuarios' ya existe.")
-
-            # Crear tabla turnos si no existe
-            if "turnos" not in tablas:
-                try:
-                    Turno.__table__.create(db.engine)
-                    print("✅ Tabla 'turnos' creada correctamente.")
-                except Exception as e:
-                    print("⚠️ Error creando la tabla 'turnos':", e)
-            else:
-                print("ℹ️ La tabla 'turnos' ya existe.")
-
-            # 🔄 Refrescar el inspector después de crear las tablas
-            insp = inspect(db.engine)
-            tablas_actualizadas = insp.get_table_names()
-
-            # 🔹 Crear usuario administrador inicial SOLO si ya existe la tabla usuarios
-            if "usuarios" in tablas_actualizadas:
-                from werkzeug.security import generate_password_hash
-
-                if Usuario.query.count() == 0:
-                    username = "Administrador"
-                    password = "Campana17"
-                    hashed_password = generate_password_hash(password)
-                    nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
-                    db.session.add(nuevo_usuario)
-                    db.session.commit()
-                    print(f"✅ Usuario '{username}' creado automáticamente.")
+                # Crear tabla usuarios si no existe
+                if "usuarios" not in tablas:
+                    try:
+                        Usuario.__table__.create(db.engine)
+                        print("✅ Tabla 'usuarios' creada correctamente.")
+                    except Exception as e:
+                        print("⚠️ Error creando la tabla 'usuarios':", e)
                 else:
-                    print("ℹ️ Ya existe un usuario administrador.")
-            else:
-                print("⚠️ La tabla 'usuarios' aún no existe, no se creó el admin.")
+                    print("ℹ️ La tabla 'usuarios' ya existe.")
+
+                # Crear tabla turnos si no existe
+                if "turnos" not in tablas:
+                    try:
+                        Turno.__table__.create(db.engine)
+                        print("✅ Tabla 'turnos' creada correctamente.")
+                    except Exception as e:
+                        print("⚠️ Error creando la tabla 'turnos':", e)
+                else:
+                    print("ℹ️ La tabla 'turnos' ya existe.")
+
+                # 🔄 Refrescar el inspector después de crear las tablas
+                insp = inspect(db.engine)
+                tablas_actualizadas = insp.get_table_names()
+
+                # 🔹 Crear usuario administrador inicial SOLO si ya existe la tabla usuarios
+                if "usuarios" in tablas_actualizadas:
+                    from werkzeug.security import generate_password_hash
+
+                    if Usuario.query.count() == 0:
+                        username = "Administrador"
+                        password = "Campana17"
+                        hashed_password = generate_password_hash(password)
+                        nuevo_usuario = Usuario(username=username, password_hash=hashed_password)
+                        db.session.add(nuevo_usuario)
+                        db.session.commit()
+                        print(f"✅ Usuario '{username}' creado automáticamente.")
+                    else:
+                        print("ℹ️ Ya existe un usuario administrador.")
+                else:
+                    print("⚠️ La tabla 'usuarios' aún no existe, no se creó el admin.")
+            except Exception as e:
+                # Mensaje de advertencia si la conexión a la DB falla
+                print(f"❌ ADVERTENCIA: La conexión a la base de datos falló al iniciar. Error: {e}")
 
     # 🔹 Endpoint para el monitor de UptimeRobot (acepta HEAD y GET)
     @app.route("/api/turnos/ultimo", methods=["HEAD", "GET"])
