@@ -4,7 +4,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import cloudinary
 import os
-from flask_cors import CORS  
+from flask_cors import CORS  
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -23,9 +23,18 @@ def create_app(config_name='default'):
 
     # 🔹 Configurar conexión a DB
     database_url = os.environ.get("DATABASE_URL")
+    
+    # Nuevo flag para detectar si es PostgreSQL y necesita SSL
+    is_postgres = False
+    
     if database_url:
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql://", 1)
+        
+        # Detectar PostgreSQL para aplicar la corrección SSL
+        if database_url.startswith("postgresql://"):
+             is_postgres = True
+             
     else:
         db_user = os.environ.get("DB_USER", "root")
         db_password = os.environ.get("DB_PASSWORD", "")
@@ -37,6 +46,15 @@ def create_app(config_name='default'):
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['FLASK_RUN_PORT'] = int(os.environ.get("PORT", 5001))
+    
+    # 🔒 CORRECCIÓN SSL para Render (SOLUCIÓN al error OperationalError)
+    if is_postgres:
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'connect_args': {
+                'sslmode': 'require' 
+            }
+        }
+    # ---------------------------------------------------------------
 
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 
@@ -94,6 +112,8 @@ def create_app(config_name='default'):
                     db.session.add(nuevo_usuario)
                     db.session.commit()
                     print(f"✅ Usuario '{username}' creado automáticamente.")
+                else:
+                    print("ℹ️ Ya existe un usuario administrador.")
             else:
                 print("⚠️ La tabla 'usuarios' aún no existe, no se creó el admin.")
 
