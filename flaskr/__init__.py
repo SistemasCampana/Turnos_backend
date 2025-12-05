@@ -4,13 +4,14 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import cloudinary
 import os
-from flask_cors import CORS  
+from flask_cors import CORS
 
 db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app(config_name='default'):
     app = Flask(__name__)
+
 
     cloudinary.config(
         cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dz6c95uv6'),
