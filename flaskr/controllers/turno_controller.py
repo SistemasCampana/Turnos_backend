@@ -1,7 +1,8 @@
 from flaskr import db
 from flask import Blueprint, jsonify, request
 # 🚨 Agregamos datetime para el manejo de la fecha en el informe
-from datetime import datetime 
+from datetime import datetime
+import pytz 
 from flaskr.modelos.modelos import Turno, TurnoSchema, EstadoTurno
 # Importamos la función func de SQLAlchemy para trabajar con fechas en la base de datos
 # from sqlalchemy import func
@@ -100,22 +101,31 @@ def reiniciar_turnos():
 # --- NUEVA FUNCIÓN DE UTILIDAD: Serializa el turno y formatea la hora ---
 def serializar_turno_para_informe(turno):
     """
-    Convierte un objeto Turno de la base de datos a un diccionario para el informe,
-    incluyendo la hora de generación formateada.
+    Convierte un objeto Turno a un diccionario, convirtiendo el tiempo UTC 
+    al huso horario de America/Bogota para mostrar la hora local.
     """
-    # Se asume que el objeto Turno tiene un atributo 'fecha_creacion' que es un objeto datetime.
     hora_generacion = "N/A" # Valor por defecto
     
-    # 🚨 NOTA: Si el campo 'fecha_creacion' no existe, o no es un datetime, 
-    # la hora_generacion será 'N/A'.
+    # 🚨 PASO CLAVE 2: Configuramos las zonas horarias
+    zona_utc = pytz.utc
+    zona_bogota = pytz.timezone('America/Bogota') 
+    
     try:
         if hasattr(turno, 'creado_en') and isinstance(getattr(turno, 'creado_en'), datetime):
-            # Formatea el datetime a un string de hora (ej: 03:45 PM)
-            hora_generacion = turno.creado_en.strftime('%I:%M %p')
-    except Exception:
-        pass # Ignora errores de formato si el campo existe pero es inválido.
+            
+            # 1. Hacer el datetime consciente de que está en UTC
+            utc_dt = zona_utc.localize(turno.creado_en)
+            
+            # 2. Convertir el tiempo de UTC a la hora de Bogotá
+            local_dt = utc_dt.astimezone(zona_bogota)
 
-    # 🛑 Retorna el diccionario con todos los campos necesarios para el frontend
+            # 3. Formatear la hora local de Bogotá (usando AM/PM: %I:%M %p)
+            hora_generacion = local_dt.strftime('%I:%M %p') 
+    except Exception:
+        # En caso de error, la hora_generacion se queda en "N/A"
+        pass 
+
+    # Retorna el diccionario con todos los campos necesarios para el frontend
     return {
         'id': turno.id,
         'numero': turno.numero,
@@ -123,7 +133,7 @@ def serializar_turno_para_informe(turno):
         'bodega': turno.bodega,
         'estado': turno.estado,
         'modulo': turno.modulo,
-        'hora_generacion': hora_generacion, # ✅ Nuevo campo para el Frontend
+        'hora_generacion': hora_generacion, 
     }
 
 
