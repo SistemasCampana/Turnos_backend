@@ -1,9 +1,10 @@
-# flaskr/controllers/turno_controller.py
 from flaskr import db
 from flask import Blueprint, jsonify, request
 # 🚨 Agregamos datetime para el manejo de la fecha en el informe
 from datetime import datetime 
 from flaskr.modelos.modelos import Turno, TurnoSchema, EstadoTurno
+# Importamos la función func de SQLAlchemy para trabajar con fechas en la base de datos
+from sqlalchemy import func
 
 turno_bp = Blueprint('turnos', __name__)
 turno_schema = TurnoSchema()
@@ -44,7 +45,9 @@ def crear_turno():
             nombre_cliente=nombre_cliente,
             bodega=bodega,
             estado=EstadoTurno.llamado.value,  
-            modulo=1  
+            modulo=1,
+            # NOTA: Se asume que 'fecha_creacion' se establece automáticamente 
+            # en el modelo de la base de datos al crearse.
         )
         db.session.add(nuevo_turno)
         db.session.commit()
@@ -94,6 +97,36 @@ def reiniciar_turnos():
         return jsonify({"error": str(e)}), 500
 
 
+# --- NUEVA FUNCIÓN DE UTILIDAD: Serializa el turno y formatea la hora ---
+def serializar_turno_para_informe(turno):
+    """
+    Convierte un objeto Turno de la base de datos a un diccionario para el informe,
+    incluyendo la hora de generación formateada.
+    """
+    # Se asume que el objeto Turno tiene un atributo 'fecha_creacion' que es un objeto datetime.
+    hora_generacion = "N/A" # Valor por defecto
+    
+    # 🚨 NOTA: Si el campo 'fecha_creacion' no existe, o no es un datetime, 
+    # la hora_generacion será 'N/A'.
+    try:
+        if hasattr(turno, 'fecha_creacion') and isinstance(getattr(turno, 'fecha_creacion'), datetime):
+            # Formatea el datetime a un string de hora (ej: 03:45 PM)
+            hora_generacion = turno.fecha_creacion.strftime('%I:%M %p')
+    except Exception:
+        pass # Ignora errores de formato si el campo existe pero es inválido.
+
+    # 🛑 Retorna el diccionario con todos los campos necesarios para el frontend
+    return {
+        'id': turno.id,
+        'numero': turno.numero,
+        'nombre_cliente': turno.nombre_cliente,
+        'bodega': turno.bodega,
+        'estado': turno.estado,
+        'modulo': turno.modulo,
+        'hora_generacion': hora_generacion, # ✅ Nuevo campo para el Frontend
+    }
+
+
 # 📊 NUEVA FUNCIÓN PARA GENERAR EL INFORME POR FECHA
 @turno_bp.route('/informe/<string:fecha_str>', methods=['GET', 'OPTIONS'])
 def generar_informe(fecha_str):
@@ -104,11 +137,21 @@ def generar_informe(fecha_str):
         # Convertir la string de fecha (ej: '2025-12-05') a un objeto datetime.date
         fecha_a_buscar = datetime.strptime(fecha_str, '%Y-%m-%d').date()
 
-        # Llama al método estático que debe estar definido en modelos.py (Clase Turno)
-        turnos_del_dia = Turno.obtener_turnos_por_fecha(fecha_a_buscar)
+        # 🛑 ACTUALIZACIÓN CLAVE: Usamos la función de SQLAlchemy para filtrar por la parte de fecha
+        # Llama a tu método (asumiendo que está en el modelo) o consulta directamente:
+        # turnos_del_dia = Turno.obtener_turnos_por_fecha(fecha_a_buscar)
+        
+        # Como no puedo ver tu método, usaré la consulta directa que es más común:
+        turnos_del_dia = db.session.query(Turno).filter(
+            func.date(Turno.fecha_creacion) == fecha_a_buscar
+        ).order_by(Turno.fecha_creacion.asc()).all()
 
         # 1. Obtener la lista detallada de turnos
-        turnos_detalle = turnos_schema.dump(turnos_del_dia)
+        # 🛑 CAMBIO CLAVE: Usamos la función manual para incluir 'hora_generacion'
+        turnos_detalle = [
+            serializar_turno_para_informe(t)
+            for t in turnos_del_dia
+        ]
         
         # 2. Calcular el total de turnos
         total_turnos = len(turnos_del_dia)
