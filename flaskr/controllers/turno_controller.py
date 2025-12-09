@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime 
 from flaskr.modelos.modelos import Turno, TurnoSchema, EstadoTurno
 # Importamos la función func de SQLAlchemy para trabajar con fechas en la base de datos
-from sqlalchemy import func
+# from sqlalchemy import func
 
 turno_bp = Blueprint('turnos', __name__)
 turno_schema = TurnoSchema()
@@ -109,9 +109,9 @@ def serializar_turno_para_informe(turno):
     # 🚨 NOTA: Si el campo 'fecha_creacion' no existe, o no es un datetime, 
     # la hora_generacion será 'N/A'.
     try:
-        if hasattr(turno, 'fecha_creacion') and isinstance(getattr(turno, 'fecha_creacion'), datetime):
+        if hasattr(turno, 'creado_en') and isinstance(getattr(turno, 'creado_en'), datetime):
             # Formatea el datetime a un string de hora (ej: 03:45 PM)
-            hora_generacion = turno.fecha_creacion.strftime('%I:%M %p')
+            hora_generacion = turno.creado_en.strftime('%I:%M %p')
     except Exception:
         pass # Ignora errores de formato si el campo existe pero es inválido.
 
@@ -142,9 +142,7 @@ def generar_informe(fecha_str):
         # turnos_del_dia = Turno.obtener_turnos_por_fecha(fecha_a_buscar)
         
         # Como no puedo ver tu método, usaré la consulta directa que es más común:
-        turnos_del_dia = db.session.query(Turno).filter(
-            func.date(Turno.fecha_creacion) == fecha_a_buscar
-        ).order_by(Turno.fecha_creacion.asc()).all()
+        turnos_del_dia = Turno.obtener_turnos_por_fecha(fecha_a_buscar)
 
         # 1. Obtener la lista detallada de turnos
         # 🛑 CAMBIO CLAVE: Usamos la función manual para incluir 'hora_generacion'
