@@ -5,19 +5,21 @@ from datetime import datetime
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 import enum
 
+
 class EstadoTurno(enum.Enum):
     esperando = "esperando"
     llamado = "llamado"
     atendido = "atendido"
 
-class Turno(db.Model):
+class Turno(db.Model):  
     __tablename__ = 'turnos'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     numero = db.Column(db.String(10), nullable=False)
     nombre_cliente = db.Column(db.String(100), nullable=True)
-    bodega = db.Column(db.String(100), nullable=True)
+    bodega = db.Column(db.String(100), nullable=True)   
     modulo = db.Column(db.Integer, nullable=True)
+    sede = db.Column(db.String(50), nullable=False, default="Principal")
     estado = db.Column(db.String(9), default=EstadoTurno.esperando.value, nullable=False)
 
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
@@ -44,6 +46,8 @@ class Usuario(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+    sede = db.Column(db.String(50), nullable=False, default="Paloquemao")
+    rol = db.Column(db.String(20), nullable=False)
 
     def set_password(self, password):
         """Guarda la contraseña hasheada."""

@@ -1,4 +1,6 @@
 # flaskr/app.py
+import pymysql
+pymysql.install_as_MySQLdb()
 import os
 from flaskr import create_app, db
 from flask_jwt_extended import JWTManager
@@ -8,7 +10,8 @@ from flask_migrate import Migrate
 app = create_app('default')
 
 # Habilitar CORS
-CORS(app, supports_credentials=True)
+# CORS(app, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # JWT
 app.config['JWT_SECRET_KEY'] = os.environ.get(
