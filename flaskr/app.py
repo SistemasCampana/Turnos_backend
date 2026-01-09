@@ -11,7 +11,8 @@ app = create_app('default')
 
 # Habilitar CORS
 # CORS(app, supports_credentials=True)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # JWT
 app.config['JWT_SECRET_KEY'] = os.environ.get(
