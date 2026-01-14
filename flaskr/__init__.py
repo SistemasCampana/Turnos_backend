@@ -15,10 +15,11 @@ def create_app(config_name='default'):
     # 🔹 CONFIGURACIÓN DE CORS (CORREGIDA PARA ELIMINAR EL ERROR DE CONEXIÓN)
     # Cambiamos /api/* por /* y permitimos todos los métodos y cabeceras
     CORS(app, resources={r"/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }}, supports_credentials=True)
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
+    "expose_headers": ["Content-Type", "Authorization"]
+}}, supports_credentials=True)
 
     cloudinary.config(
         cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dz6c95uv6'),
