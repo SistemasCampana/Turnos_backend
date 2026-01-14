@@ -1,79 +1,72 @@
-# flaskr/controllers/login_controller.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
-# CORRECCIÓN: Importación específica desde la carpeta modelos
-from flaskr.modelos.modelos import Usuario 
+from flaskr.modelos.modelos import Usuario, db # Importamos db para guardar
+from flask_cors import CORS
 import datetime
 
 login_bp = Blueprint('login', __name__)
 
-@login_bp.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
+# Aplicamos CORS directamente al blueprint para resolver el error de preflight
+CORS(login_bp)
 
+@login_bp.route('/login', methods=['POST', 'OPTIONS'])
+def login():
+    if request.method == 'OPTIONS':
+        return jsonify({"msg": "ok"}), 200
+
+    data = request.get_json()
     username = data.get('username')
     password = data.get('password')
 
     if not username or not password:
         return jsonify({"msg": "Usuario y contraseña son obligatorios"}), 400
 
-    # Busca al usuario en la base de datos
     usuario = Usuario.query.filter_by(username=username).first()
 
-    # CORRECCIÓN: Usamos el método check_password definido en tu modelo
-    # Quitamos la verificación de 'usuario.password_hash' aquí porque check_password ya lo hace internamente
     if not usuario or not usuario.check_password(password):
         return jsonify({"msg": "Credenciales inválidas"}), 401
 
-    # Crear token de acceso
     access_token = create_access_token(
-        identity=str(usuario.id), # Es mejor práctica que la identidad sea un string
+        identity=str(usuario.id),
         expires_delta=datetime.timedelta(hours=1)
     )
 
-    # Devolvemos el rol y el username para que el frontend (React) los use
     return jsonify({
         "access_token": access_token,
-        "rol": usuario.rol,       # Esto devolverá 'visor' o 'admin' según la DB
-        "username": usuario.username
+        "rol": usuario.rol,
+        "username": usuario.username,
+        "sede": usuario.sede
     }), 200
 
+# NUEVA RUTA: Registro de usuarios (la que fallaba en tu imagen)
+@login_bp.route('/usuarios/registro', methods=['POST', 'OPTIONS'])
+def registro():
+    # Manejo explícito de la consulta de seguridad del navegador
+    if request.method == 'OPTIONS':
+        return jsonify({"msg": "ok"}), 200
 
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    rol = data.get('rol')
+    sede = data.get('sede', 'Paloquemao') # Valor por defecto si no llega
 
+    if not username or not password:
+        return jsonify({"msg": "Faltan datos obligatorios"}), 400
 
-# # flaskr/controllers/login_controller.py
-# from flask import Blueprint, request, jsonify
-# from flask_jwt_extended import create_access_token
-# from flaskr.modelos import Usuario
-# import datetime
+    # Verificar si el usuario ya existe
+    if Usuario.query.filter_by(username=username).first():
+        return jsonify({"msg": "El usuario ya existe"}), 400
 
-# login_bp = Blueprint('login', __name__)
-
-# @login_bp.route('/login', methods=['POST'])
-# def login():
-#     data = request.get_json()
-
-#     username = data.get('username')
-#     password = data.get('password')
-
-#     if not username or not password:
-#         return jsonify({"msg": "Usuario y contraseña son obligatorios"}), 400
-
-#     usuario = Usuario.query.filter_by(username=username).first()
-
-#     # Blindaje: verifica usuario y contraseña
-#     if not usuario or not usuario.password_hash or not usuario.check_password(password):
-#         return jsonify({"msg": "Credenciales inválidas"}), 401
-
-#     # Crear token
-#     access_token = create_access_token(
-#         identity=usuario.id,
-#         expires_delta=datetime.timedelta(hours=1)
-#     )
-
-#     # IMPORTANTE: Devolvemos el rol y el username junto al token
-#     return jsonify({
-#         "access_token": access_token,
-#         "rol": usuario.rol,       # Asegúrate de tener la columna 'rol' en tu modelo
-#         "username": usuario.username
-#     }), 200
+    try:
+        # Crear el nuevo usuario usando el método de tu modelo para hashear la clave
+        nuevo_usuario = Usuario(username=username, rol=rol, sede=sede)
+        nuevo_usuario.set_password(password) # Asumiendo que tu modelo tiene set_password
+        
+        db.session.add(nuevo_usuario)
+        db.session.commit()
+        
+        return jsonify({"msg": "Usuario creado exitosamente"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": f"Error al crear usuario: {str(e)}"}), 500
