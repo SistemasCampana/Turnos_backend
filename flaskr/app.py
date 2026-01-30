@@ -26,10 +26,10 @@ def create_app():
 
     # 2. CONFIGURACIÓN DE CORS
     CORS(app, resources={r"/api/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"]
-    }})
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
 
     # 3. JWT CONFIG
     app.config['JWT_SECRET_KEY'] = 'dev-secret-campana' # Consistente con tu proyecto
