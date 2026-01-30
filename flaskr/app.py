@@ -4,7 +4,7 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flaskr.modelos.modelos import db, Usuario # Importamos Usuario para el admin inicial
 from flaskr.controllers.login_controller import login_bp
-from flaskr.controllers.turno_controller import turnos_bp 
+from flaskr.controllers.turno_controller import turno_bp 
 from werkzeug.security import generate_password_hash
 import os
 
@@ -41,7 +41,7 @@ def create_app():
 
     # 5. REGISTRO DE RUTAS
     app.register_blueprint(login_bp, url_prefix='/api')
-    app.register_blueprint(turnos_bp, url_prefix='/api') 
+    app.register_blueprint(turno_bp, url_prefix='/api') 
 
     # 6. CREACIÓN AUTOMÁTICA DE TABLAS Y ADMIN
     with app.app_context():
@@ -67,4 +67,5 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
