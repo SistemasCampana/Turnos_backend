@@ -12,30 +12,30 @@ def create_app():
     app = Flask(__name__)
 
     # 1. CONFIGURACIÓN DE BASE DE DATOS
-    # Priorizamos la variable de entorno de Render
     database_url = os.getenv('DATABASE_URL')
+    
+    # IMPORTANTE: Render a veces entrega la URL con "postgres://", 
+    # SQLAlchemy requiere "postgresql://" para funcionar correctamente.
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # Blindaje de Encoding para prevenir errores de caracteres especiales (como en sedes con tildes)
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         "connect_args": {
             "options": "-c client_encoding=utf8"
         }
     }
 
-    # 2. CONFIGURACIÓN DE CORS
-    # Esto permite que tu Frontend en local o en producción se comunique con el Backend
+    # 2. CONFIGURACIÓN DE CORS (SOLUCIÓN DEFINITIVA)
+    # Cambiamos "origins" a "*" temporalmente para asegurar la conexión en producción,
+    # esto evita el error de "preflight request" que bloqueaba a maria torres.
     CORS(app, resources={r"/api/*": {
-    "origins": ["http://localhost:3000", "https://tu-dominio-en-render.com"], # Agrega aquí tu URL de producción si la tienes
-    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allow_headers": ["Content-Type", "Authorization"],
-    "expose_headers": ["Content-Type", "Authorization"],
-    "supports_credentials": True
-}})
+        "origins": "*", 
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }})
 
     # 3. JWT CONFIG
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'dev-secret-campana')
@@ -45,7 +45,8 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app, db)
 
-    # 5. REGISTRO DE RUTAS (Aquí es donde definimos el prefijo /api)
+    # 5. REGISTRO DE RUTAS
+    # Asegúrate de que en turno_controller.py el blueprint se llame exactamente 'turno_bp'
     app.register_blueprint(login_bp, url_prefix='/api')
     app.register_blueprint(turno_bp, url_prefix='/api') 
 
@@ -53,8 +54,6 @@ def create_app():
     with app.app_context():
         try:
             db.create_all() 
-            
-            # Verificamos si existe el Administrador inicial
             if not Usuario.query.filter_by(username="Administrador").first():
                 admin = Usuario(
                     username="Administrador",
@@ -73,6 +72,6 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    # Render usa la variable de entorno PORT
     port = int(os.environ.get("PORT", 5000))
+    # Importante: host='0.0.0.0' es obligatorio para que Render sea visible
     app.run(debug=False, host='0.0.0.0', port=port)
